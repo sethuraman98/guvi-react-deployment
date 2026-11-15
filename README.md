@@ -18,11 +18,11 @@ remains unavailable for the configured duration.
 ``` text
                          GitHub repository
                          dev       master
-                           \         /
+                           \\         /
                         Jenkins Multibranch
                          Pipeline (Jenkinsfile)
-                           /         \
-                    Build & Push   Build & Push
+                           /         \\
+                    Build \& Push   Build \& Push
                          |             |
                     Docker Hub     Docker Hub
                     DEV image     PROD image
@@ -30,8 +30,8 @@ remains unavailable for the configured duration.
                          v             v
                   guvi-react-dev  guvi-react-prod
                   host port 8081  host port 80
-                         \             /
-                          \           /
+                         \\             /
+                          \\           /
                        Blackbox Exporter
                                |
                            Prometheus
@@ -45,33 +45,35 @@ remains unavailable for the configured duration.
 
 ## Technology Stack
 
--   AWS EC2 --- Linux host for the application, Jenkins, and monitoring
-    containers
--   Amazon Linux 2023 --- EC2 operating system
--   Docker Engine and Docker Compose --- container build and runtime
--   Nginx --- serves the prebuilt React application
--   GitHub --- source repository and `dev` / `master` branches
--   Jenkins --- Multibranch Pipeline CI/CD
--   Docker Hub --- separate DEV and PROD image repositories
--   Prometheus --- metrics collection and alert-rule evaluation
--   Blackbox Exporter --- HTTP endpoint probing
--   Alertmanager --- alert routing and email notifications
--   Gmail SMTP --- notification delivery
+* AWS EC2 --- Linux host for the application, Jenkins, and monitoring
+containers
+* Amazon Linux 2023 --- EC2 operating system
+* Docker Engine and Docker Compose --- container build and runtime
+* Nginx --- serves the prebuilt React application
+* GitHub --- source repository and `dev` / `master` branches
+* Jenkins --- Multibranch Pipeline CI/CD
+* Docker Hub --- separate DEV and PROD image repositories
+* Prometheus --- metrics collection and alert-rule evaluation
+* Blackbox Exporter --- HTTP endpoint probing
+* Alertmanager --- alert routing and email notifications
+* Gmail SMTP --- notification delivery
 
 ## Deployment Environments
 
-  --------------------------------------------------------------------------------------------------
-  Environment   Git branch    Docker Hub image                 Container                   Host port
-  ------------- ------------- -------------------------------- ------------------- -----------------
-  DEV           `dev`         `sethuaws/guvi-react-app-dev`    `guvi-react-dev`               `8081`
+\---
 
-  PROD          `master`      `sethuaws/guvi-react-app-prod`   `guvi-react-prod`                `80`
-  --------------------------------------------------------------------------------------------------
+Environment   Git branch    Docker Hub image                 Container                   Host port
+
+\---
+
+DEV           `dev`         `sethuaws/guvi-react-app-dev`    `guvi-react-dev`               `8081`
+
+## PROD          `master`      `sethuaws/guvi-react-app-prod`   `guvi-react-prod`                `80`
 
 Application URLs used during validation:
 
--   DEV: `http://13.211.30.236:8081`
--   PROD: `http://13.211.30.236`
+* DEV: `http://13.211.30.236:8081`
+* PROD: `http://13.211.30.236`
 
 > These are the EC2 public-IP endpoints used during this project run.
 > They may change if the instance is stopped and restarted without an
@@ -121,18 +123,18 @@ The Dockerfile uses Nginx Alpine to serve the prebuilt React files:
 
 ``` dockerfile
 FROM nginx:alpine
-RUN rm -rf /usr/share/nginx/html/*
+RUN rm -rf /usr/share/nginx/html/\*
 COPY build/ /usr/share/nginx/html/
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+CMD \["nginx", "-g", "daemon off;"]
 ```
 
 The build script selects the image repository from the branch name,
 builds `latest` and commit-specific tags, and pushes both tags to Docker
 Hub.
 
--   `dev` → `sethuaws/guvi-react-app-dev`
--   `master` → `sethuaws/guvi-react-app-prod`
+* `dev` → `sethuaws/guvi-react-app-dev`
+* `master` → `sethuaws/guvi-react-app-prod`
 
 The deploy script pulls the selected image, replaces the corresponding
 container, and performs an HTTP health check.
@@ -145,14 +147,14 @@ the `Jenkinsfile`.
 
 Pipeline stages:
 
-1.  **Checkout** --- checks out the branch source.
-2.  **Build and Deploy** --- runs for `dev` and `master`.
-3.  **Docker authentication** --- uses the Jenkins credential ID
-    `dockerhub-creds` and `--password-stdin`.
-4.  **Build and push** --- runs `build.sh` to build and push the
-    branch-specific image.
-5.  **Deploy** --- runs `deploy.sh` to deploy the correct image and
-    validate the HTTP response.
+1. **Checkout** --- checks out the branch source.
+2. **Build and Deploy** --- runs for `dev` and `master`.
+3. **Docker authentication** --- uses the Jenkins credential ID
+`dockerhub-creds` and `--password-stdin`.
+4. **Build and push** --- runs `build.sh` to build and push the
+branch-specific image.
+5. **Deploy** --- runs `deploy.sh` to deploy the correct image and
+validate the HTTP response.
 
 The Multibranch Pipeline was configured with periodic scanning
 (one-minute interval) for branch changes. A GitHub webhook was not used
@@ -163,9 +165,9 @@ triggered the branch build.
 
 Create a Jenkins credential of type **Username with password**:
 
--   ID: `dockerhub-creds`
--   Username: Docker Hub username
--   Password: Docker Hub access token
+* ID: `dockerhub-creds`
+* Username: Docker Hub username
+* Password: Docker Hub access token
 
 Do not store the Docker Hub token in the repository or Jenkinsfile.
 
@@ -173,11 +175,11 @@ Do not store the Docker Hub token in the repository or Jenkinsfile.
 
 ### Prometheus and Blackbox Exporter
 
-Prometheus scrapes Blackbox Exporter using the `http_2xx` probe module.
+Prometheus scrapes Blackbox Exporter using the `http\_2xx` probe module.
 The monitored application endpoints are:
 
--   DEV: `http://host.docker.internal:8081`
--   PROD: `http://host.docker.internal:80`
+* DEV: `http://host.docker.internal:8081`
+* PROD: `http://host.docker.internal:80`
 
 The target labels identify the environment as `dev` and `prod`. The
 Prometheus Targets screenshot shows both application probes as `UP`,
@@ -192,7 +194,7 @@ groups:
   - name: application-alerts
     rules:
       - alert: ApplicationDown
-        expr: probe_success == 0
+        expr: probe\_success == 0
         for: 1m
         labels:
           severity: critical
@@ -213,9 +215,9 @@ Alertmanager configuration file.
 
 **Never commit these files or their contents:**
 
--   `.env`
--   `monitoring/alertmanager.yml` (generated file containing SMTP
-    credentials)
+* `.env`
+* `monitoring/alertmanager.yml` (generated file containing SMTP
+credentials)
 
 Keep the `.env` file restricted to the server user and use a Gmail App
 Password rather than an account password. The repository should contain
@@ -225,8 +227,8 @@ only `monitoring/alertmanager.yml.template`, without real credentials.
 
 Prometheus and Alertmanager were bound to localhost on the EC2 host:
 
--   Prometheus: `http://localhost:9090`
--   Alertmanager: `http://localhost:9093`
+* Prometheus: `http://localhost:9090`
+* Alertmanager: `http://localhost:9093`
 
 They were accessed from the workstation using an SSH local port-forward.
 Their management ports were not opened to the public internet.
@@ -238,16 +240,16 @@ Run these commands from the project directory on the EC2 instance.
 ### Check application and monitoring containers
 
 ``` bash
-docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+docker ps --format "table {{.Names}}\\t{{.Image}}\\t{{.Status}}\\t{{.Ports}}"
 ```
 
 Expected containers:
 
--   `guvi-react-dev`
--   `guvi-react-prod`
--   `prometheus`
--   `blackbox-exporter`
--   `alertmanager`
+* `guvi-react-dev`
+* `guvi-react-prod`
+* `prometheus`
+* `blackbox-exporter`
+* `alertmanager`
 
 ### Check application endpoints from EC2
 
@@ -302,43 +304,77 @@ Do not leave the DEV container stopped after the test.
 
 ## AWS and Security Notes
 
--   The project reused an existing EC2 instance rather than creating
-    another instance, to avoid unnecessary infrastructure cost.
--   The instance used during the project was a `c7i-flex.large` in AWS
-    region `ap-southeast-2` (Sydney).
--   HTTP application ports `80` and `8081` were used for the PROD and
-    DEV endpoints.
--   SSH and Jenkins access were restricted to the operator's public IP
-    at the time of setup.
--   Prometheus (`9090`) and Alertmanager (`9093`) were bound to
-    `127.0.0.1`; Blackbox Exporter (`9115`) was kept internal to the
-    Docker network.
--   Do not publish Docker Hub tokens, Gmail App Passwords, private SSH
-    keys, `.env`, or generated secret configuration.
--   Review the EC2 security group and rotate credentials if any secret
-    has accidentally been exposed.
+* The project reused an existing EC2 instance rather than creating
+another instance, to avoid unnecessary infrastructure cost.
+* The instance used during the project was a `c7i-flex.large` in AWS
+region `ap-southeast-2` (Sydney).
+* HTTP application ports `80` and `8081` were used for the PROD and
+DEV endpoints.
+* SSH and Jenkins access were restricted to the operator's public IP
+at the time of setup.
+* Prometheus (`9090`) and Alertmanager (`9093`) were bound to
+`127.0.0.1`; Blackbox Exporter (`9115`) was kept internal to the
+Docker network.
+* Do not publish Docker Hub tokens, Gmail App Passwords, private SSH
+keys, `.env`, or generated secret configuration.
+* Review the EC2 security group and rotate credentials if any secret
+has accidentally been exposed.
 
 ## Evidence Screenshots
 
 The `screenshots/` directory contains 11 screenshots captured during
 implementation and verification:
 
-1.  Production application homepage
-2.  Docker Hub DEV repository
-3.  Docker Hub PROD repository
-4.  Alertmanager FIRING email
-5.  Alertmanager RESOLVED email
-6.  Jenkins Multibranch Pipeline with successful `dev` and `master`
-    branch builds
-7.  React DEV application
-8.  React PROD application
-9.  Prometheus targets showing DEV, PROD, and Prometheus as UP
+1. Production application homepage
+2. Docker Hub DEV repository
+3. Docker Hub PROD repository
+4. Alertmanager FIRING email
+5. Alertmanager RESOLVED email
+6. Jenkins Multibranch Pipeline with successful `dev` and `master`
+branch builds
+7. React DEV application
+8. React PROD application
+9. Prometheus targets showing DEV, PROD, and Prometheus as UP
 10. Prometheus `ApplicationDown` alert rule
 11. Docker containers showing all five application and monitoring
-    containers running
+containers running
 
 See [`screenshots/README-EVIDENCE.md`](screenshots/README-EVIDENCE.md)
 for the evidence index.
+
+
+
+\### EC2 Instance Selection – Infrastructure Constraint
+
+
+
+The assignment initially suggested using a `t2.micro` EC2 instance. However, the `t2.micro` instance type was not available in the selected AWS region (`ap-southeast-2`, Sydney) during deployment.
+
+
+
+To overcome this availability limitation and continue the project without interruption, we selected the `c7i-flex.large` instance type.
+
+
+
+\*\*Instance details:\*\*
+
+\- Requested instance type: `t2.micro`
+
+\- Actual instance type: `c7i-flex.large`
+
+\- AWS Region: `ap-southeast-2` (Sydney)
+
+\- Operating System: Amazon Linux 2023
+
+
+
+\*\*Reason for deviation:\*\* The requested `t2.micro` instance type was unavailable, so `c7i-flex.large` was selected as an alternative to complete the deployment, Jenkins CI/CD pipeline, Docker containers, and monitoring setup.
+
+
+
+\*\*Note:\*\* The alternative instance type has higher resource capacity and potentially higher running costs than `t2.micro`. The instance was reused for the project to avoid creating additional EC2 resources.
+
+
 
 ## GitHub Repository
 
@@ -351,3 +387,4 @@ This project demonstrates branch-based container image creation and
 deployment, separate DEV and PROD application environments, Jenkins
 Multibranch Pipeline automation, HTTP availability monitoring, and email
 notifications for application downtime and recovery.
+
